@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Zoom Webinar CSV 変換ツール</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f7f7fb;
+      --card-bg: #ffffff;
+      --accent: #2f7fd4;
+      --accent-soft: #e4f0ff;
+      --border: #d0d4e0;
+      --text-main: #222222;
+      --text-muted: #666666;
+      --danger: #c0392b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 24px auto;
+      padding: 0 16px 32px;
+    }
+
+    header {
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      margin: 0 0 4px;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    header p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 16px 18px 20px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 8px;
+    }
+
+    .small-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Consolas", "Liberation Mono", "Courier New", monospace;
+      font-size: 0.85rem;
+    }
+
+    textarea:focus,
+    select:focus,
+    input[type="file"]:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    button {
+      border-radius: 6px;
+      border: none;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    button.secondary {
+      background: #ffffff;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    input[type="file"] {
+      font-size: 0.85rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .preview-table-wrapper {
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #fff;
+      margin-top: 8px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 360px;
+      font-size: 0.8rem;
+    }
+
+    th, td {
+      border: 1px solid #e0e4ef;
+      padding: 4px 6px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #f3f4fa;
+      font-weight: 600;
+    }
+
+    .mapping-selects {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .mapping-selects label {
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .mapping-selects select {
+      font-size: 0.8rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      min-width: 110px;
+    }
+
+    .checkbox-row {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .output-area {
+      margin-top: 8px;
+    }
+
+    .output-area textarea {
+      min-height: 120px;
+    }
+
+    .download-link {
+      margin-top: 6px;
+      font-size: 0.85rem;
+    }
+
+    .download-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .download-link a:hover {
+      text-decoration: underline;
+    }
+
+    .message {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    footer {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        margin-top: 16px;
+      }
+      header h1 {
+        font-size: 1.3rem;
+      }
+      table {
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Zoom Webinar CSV 変換ツール</h1>
+      <p>名簿や申込リストを、Zoomインポート用CSV（Email, First Name, Last Name）に変換します（ブラウザ内のみで処理）。</p>
+    </header>
+
+    <section class="card">
+      <h2>1. 元データの入力</h2>
+      <span class="small-label">Excelやスプレッドシートからコピー＆ペースト、またはCSV/TSVファイルを指定してください。</span>
+      <textarea id="inputText" placeholder="例）
+1) Excelからコピーしたタブ区切り
+メールアドレス[TAB]姓[TAB]名
+example@example.com[TAB]山田[TAB]太郎
+
+2) テキストで「メールアドレス 全角スペース 氏名」など
+example@example.com　山田太郎
+example@example.com　山田　太郎
+"></textarea>
+
+      <div class="controls-row">
+        <button id="parseButton" type="button">プレビューを作成</button>
+        <button id="clearButton" type="button" class="secondary">クリア</button>
+        <input id="fileInput" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values">
+      </div>
+      <div class="hint">
+        ・タブ区切り（Excelのコピー）とカンマ区切り（CSV）、および「メールアドレス＋スペース＋氏名」の形式に対応しています。<br>
+        ・氏名を1つのセル（フルネーム）にしている場合は、その列を「First Name」に割り当てれば、Zoom上ではフルネームとして表示されます。
+      </div>
+      <div id="inputMessage" class="message"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. 列の対応付け</h2>
+      <span class="small-label">プレビューを確認し、Zoom側の「Email / First Name / Last Name」に対応する列を選択してください。</span>
+
+      <div id="previewContainer" class="preview-table-wrapper" style="display:none;"></div>
+
+      <div id="mappingContainer" class="mapping-selects" style="display:none;"></div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="hasHeader" checked>
+        <span>1行目はヘッダー（列名）として無視する</span>
+      </label>
+
+      <div class="hint">
+        Zoomのインポート形式は「Email, First Name, Last Name」の3列のみです。<br>
+        First Name / Last Nameが不要な場合は、どちらか片方だけ指定しても構いません（空欄になります）。
+      </div>
+      <div id="mappingMessage" class="message"></div>
+    </section>
+
+    <section class="card">
+      <h2>3. Zoom用CSVの生成</h2>
+      <span class="small-label">Zoomの「CSVからのインポート」で読み込める形式のCSVを生成します。</span>
+      <div class="controls-row">
+        <button id="generateButton" type="button" disabled>Zoom用CSVを生成</button>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="includeHeader" checked>
+        <span>1行目に「Email, First Name, Last Name」のヘッダー行を含める</span>
+      </label>
+
+      <div class="output-area">
+        <textarea id="outputText" placeholder="ここにZoom用のCSV（Email,First Name,Last Name）が生成されます。" readonly></textarea>
+        <div class="download-link">
+          <a id="downloadLink" href="#" download="zoom_registrants.csv" style="display:none;">zoom_registrants.csv をダウンロード</a>
+        </div>
+      </div>
+      <div class="hint">
+        ・CSVを保存する際の文字コードはUTF-8です。ZoomのCSVインポートでも推奨されています。<br>
+        ・Zoom側では、ウェビナー／ミーティングともに「Email, First Name, Last Name」の順でCSVを読み込みます。
+      </div>
+      <div id="outputMessage" class="message"></div>
+    </section>
+
+    <footer>
+      GitHub公開用のシンプルなスタンドアロンHTMLです（JavaScript / 外部依存なし）。
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      let parsedRows = [];
+      let currentDelimiter = ","; // ",", "\t", "ws"
+      let currentObjectUrl = null;
+
+      const inputText = document.getElementById("inputText");
+      const parseButton = document.getElementById("parseButton");
+      const clearButton = document.getElementById("clearButton");
+      const fileInput = document.getElementById("fileInput");
+      const inputMessage = document.getElementById("inputMessage");
+
+      const previewContainer = document.getElementById("previewContainer");
+      const mappingContainer = document.getElementById("mappingContainer");
+      const mappingMessage = document.getElementById("mappingMessage");
+      const hasHeaderCheckbox = document.getElementById("hasHeader");
+
+      const generateButton = document.getElementById("generateButton");
+      const includeHeaderCheckbox = document.getElementById("includeHeader");
+      const outputText = document.getElementById("outputText");
+      const downloadLink = document.getElementById("downloadLink");
+      const outputMessage = document.getElementById("outputMessage");
+
+      function resetState() {
+        parsedRows = [];
+        currentDelimiter = ",";
+        previewContainer.innerHTML = "";
+        previewContainer.style.display = "none";
+        mappingContainer.innerHTML = "";
+        mappingContainer.style.display = "none";
+        mappingMessage.textContent = "";
+        mappingMessage.classList.remove("error");
+        outputText.value = "";
+        outputMessage.textContent = "";
+        inputMessage.textContent = "";
+        generateButton.disabled = true;
+        hasHeaderCheckbox.checked = true;
+        includeHeaderCheckbox.checked = true;
+        if (currentObjectUrl) {
+          URL.revokeObjectURL(currentObjectUrl);
+          currentObjectUrl = null;
+        }
+        downloadLink.style.display = "none";
+      }
+
+      function detectDelimiter(text) {
+        const firstLine = text.split(/\r?\n/)[0] || "";
+
+        // 1. タブ優先（Excelコピー）
+        if (firstLine.indexOf("\t") !== -1) {
+          return "\t";
+        }
+
+        // 2. カンマ（CSV）
+        if (firstLine.indexOf(",") !== -1) {
+          return ",";
+        }
+
+        // 3. スペース・全角スペース区切り（メールアドレス＋氏名）
+        if (/[ \u3000]/.test(firstLine)) {
+          return "ws";
+        }
+
+        // 4. デフォルトはタブ（Excel想定）
+        return "\t";
+      }
+
+      function parseInput(text) {
+        resetState();
+        const trimmed = text.trim();
+        if (!trimmed) {
+          inputMessage.textContent = "元データが空です。テキストを貼り付けるか、ファイルを選択してください。";
+          return;
+        }
+
+        currentDelimiter = detectDelimiter(trimmed);
+        const lines = trimmed.split(/\r?\n/).filter(function (line) {
+          return line.trim() !== "";
+        });
+
+        if (lines.length === 0) {
+          inputMessage.textContent = "有効な行が見つかりませんでした。";
+          return;
+        }
+
+        parsedRows = lines.map(function (line) {
+          if (currentDelimiter === "\t") {
+            return line.split("\t");
+          } else if (currentDelimiter === ",") {
+            return simpleCsvSplit(line);
+          } else if (currentDelimiter === "ws") {
+            // 半角スペース・全角スペースの連続を区切りとして扱う
+            return line.trim().split(/[ \u3000]+/);
+          } else {
+            // フォールバック
+            return [line];
+          }
+        });
+
+        renderPreview();
+        renderMappingControls();
+        inputMessage.textContent = "プレビューを作成しました。列の対応付けを確認してください。";
+      }
+
+      function simpleCsvSplit(line) {
+        const result = [];
+        let current = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              current += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (ch === "," && !inQuotes) {
+            result.push(current);
+            current = "";
+          } else {
+            current += ch;
+          }
+        }
+        result.push(current);
+        return result;
+      }
+
+      function renderPreview() {
+        if (!parsedRows.length) return;
+
+        const maxPreviewRows = Math.min(5, parsedRows.length);
+        const maxCols = parsedRows.reduce(function (max, row) {
+          return Math.max(max, row.length);
+        }, 0);
+
+        let html = "<table><thead><tr>";
+        for (let c = 0; c < maxCols; c++) {
+          html += "<th>列" + (c + 1) + "</th>";
+        }
+        html += "</tr></thead><tbody>";
+
+        for (let r = 0; r < maxPreviewRows; r++) {
+          html += "<tr>";
+          const row = parsedRows[r];
+          for (let c = 0; c < maxCols; c++) {
+            const value = (row[c] !== undefined ? row[c] : "")
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
+            html += "<td>" + value + "</td>";
+          }
+          html += "</tr>";
+        }
+
+        html += "</tbody></table>";
+
+        previewContainer.innerHTML = html;
+        previewContainer.style.display = "block";
+      }
+
+      function renderMappingControls() {
+        if (!parsedRows.length) return;
+
+        const firstRow = parsedRows[0];
+        const cols = firstRow.length;
+        let html = "";
+
+        for (let c = 0; c < cols; c++) {
+          const label = "列" + (c + 1);
+          html += "<label>";
+          html += "<span>" + label + "</span>";
+          html += '<select data-col-index="' + c + '">';
+          html += '<option value="">（無視）</option>';
+          html += '<option value="email">Email</option>';
+          html += '<option value="first">First Name（名）</option>';
+          html += '<option value="last">Last Name（姓）</option>';
+          html += "</select>";
+          html += "</label>";
+        }
+
+        mappingContainer.innerHTML = html;
+        mappingContainer.style.display = "flex";
+        generateButton.disabled = false;
+
+        autoGuessMapping();
+      }
+
+      function autoGuessMapping() {
+        const selects = mappingContainer.querySelectorAll("select");
+        const headerIsLabel = hasHeaderCheckbox.checked;
+        const headerRow = parsedRows[0] || [];
+        const emailKeywords = ["mail", "メール", "email", "e-mail", "アドレス"];
+        const firstKeywords = ["first", "名", "なまえ", "名前"];
+        const lastKeywords = ["last", "姓", "苗字", "氏"];
+
+        selects.forEach(function (select, index) {
+          const headerValue = (headerRow[index] || "").toString().toLowerCase();
+
+          if (headerIsLabel && headerValue) {
+            if (emailKeywords.some(function (kw) { return headerValue.indexOf(kw) !== -1; })) {
+              select.value = "email";
+            } else if (firstKeywords.some(function (kw) { return headerValue.indexOf(kw) !== -1; })) {
+              select.value = "first";
+            } else if (lastKeywords.some(function (kw) { return headerValue.indexOf(kw) !== -1; })) {
+              select.value = "last";
+            }
+          }
+        });
+
+        mappingMessage.textContent = "必要に応じて、列の対応付けを手動で修正してください。";
+      }
+
+      function generateZoomCsv() {
+        outputText.value = "";
+        outputMessage.textContent = "";
+        mappingMessage.textContent = "";
+        mappingMessage.classList.remove("error");
+
+        if (!parsedRows.length) {
+          outputMessage.textContent = "先に元データを読み込んでください。";
+          return;
+        }
+
+        const selects = mappingContainer.querySelectorAll("select");
+        let emailCol = null;
+        let firstCol = null;
+        let lastCol = null;
+
+        selects.forEach(function (select) {
+          const colIndex = parseInt(select.getAttribute("data-col-index"), 10);
+          const value = select.value;
+          if (value === "email") {
+            emailCol = colIndex;
+          } else if (value === "first") {
+            firstCol = colIndex;
+          } else if (value === "last") {
+            lastCol = colIndex;
+          }
+        });
+
+        if (emailCol === null) {
+          mappingMessage.textContent = "少なくとも1つの列を「Email」に指定してください。";
+          mappingMessage.classList.add("error");
+          return;
+        }
+
+        const hasHeader = hasHeaderCheckbox.checked;
+        const includeHeader = includeHeaderCheckbox.checked;
+        const startIndex = hasHeader ? 1 : 0;
+
+        const dataRows = [];
+
+        for (let r = startIndex; r < parsedRows.length; r++) {
+          const row = parsedRows[r];
+          if (!row) continue;
+
+          const email = (row[emailCol] || "").trim();
+          if (!email) {
+            continue;
+          }
+          const first = firstCol !== null ? (row[firstCol] || "").trim() : "";
+          const last = lastCol !== null ? (row[lastCol] || "").trim() : "";
+
+          dataRows.push([email, first, last]);
+        }
+
+        if (!dataRows.length) {
+          outputMessage.textContent = "有効な行が生成されませんでした。列の指定と元データを確認してください。";
+          return;
+        }
+
+        const outputRows = [];
+        if (includeHeader) {
+          outputRows.push(["Email", "First Name", "Last Name"]);
+        }
+        Array.prototype.push.apply(outputRows, dataRows);
+
+        const csvText = outputRows.map(function (cols) {
+          return cols.map(escapeCsvValue).join(",");
+        }).join("\r\n");
+
+        outputText.value = csvText;
+        outputMessage.textContent = "Zoom用のCSVを生成しました。コピーするか、ファイルとしてダウンロードしてください。";
+
+        if (currentObjectUrl) {
+          URL.revokeObjectURL(currentObjectUrl);
+        }
+        const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+        currentObjectUrl = URL.createObjectURL(blob);
+        downloadLink.href = currentObjectUrl;
+        downloadLink.style.display = "inline-block";
+      }
+
+      function escapeCsvValue(value) {
+        const str = value == null ? "" : String(value);
+        if (/[",\r\n]/.test(str)) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      }
+
+      parseButton.addEventListener("click", function () {
+        parseInput(inputText.value);
+      });
+
+      clearButton.addEventListener("click", function () {
+        inputText.value = "";
+        fileInput.value = "";
+        resetState();
+      });
+
+      fileInput.addEventListener("change", function (event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) {
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const text = e.target.result;
+          inputText.value = text;
+          parseInput(text);
+        };
+        reader.readAsText(file);
+      });
+
+      generateButton.addEventListener("click", generateZoomCsv);
+
+      hasHeaderCheckbox.addEventListener("change", function () {
+        if (parsedRows.length) {
+          autoGuessMapping();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
